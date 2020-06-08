@@ -7,12 +7,56 @@
     tools:context=".MainActivity">
 
     <TextView
+        android:id="@+id/textViewCurrLocation"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/setHomeBtn"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.362" />
+
+    <TextView
+        android:id="@+id/textViewHomeLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Home loc!"
+        app:layout_constraintBottom_toTopOf="@id/setHomeBtn"
+        app:layout_constraintHorizontal_bias="0.792"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewCurrLocation" />
+
+    <Button
+        android:id="@+id/trackingBtn"
+        android:layout_width="0dp"
+        android:layout_marginEnd="12sp"
+        android:layout_marginStart="12sp"
+        android:layout_height="wrap_content"
+        android:text="Start tracking"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/setHomeBtn"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/textViewCurrLocation"
+        app:layout_constraintVertical_bias="0.68" />
+
+    <Button
+        android:id="@+id/setHomeBtn"
+        android:layout_width="0dp"
+        android:layout_marginEnd="12sp"
+        android:layout_marginStart="12sp"
+        android:layout_height="wrap_content"
+        android:text="Set location as home"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/trackingBtn"
+        app:layout_constraintTop_toBottomOf="@id/textViewHomeLocation"
+        app:layout_constraintVertical_bias="0.8" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
