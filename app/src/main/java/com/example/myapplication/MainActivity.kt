@@ -52,7 +52,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-//        setHomeBtn.visibility = View.INVISIBLE
         if (savedInstanceState != null) {
             trackingBtn.text = savedInstanceState.getString(KEY_TRACK_TEXT)
             setHomeBtn.text = savedInstanceState.getString(KEY_SET_HOME_TEXT)
@@ -74,11 +73,18 @@ class MainActivity : AppCompatActivity() {
             Log.d("getHomeLocation", "home accuracy = ${appContext.appSP.getHomeLocation()?.accuracy}")
             textViewHomeLocation.visibility = View.VISIBLE
             setHomeBtn.visibility = View.VISIBLE
+            if (locationInfo == null)
+            {
+                fixSetHomeBtn.visibility = View.INVISIBLE
+            } else {
+                fixSetHomeBtn.visibility = View.VISIBLE
+            }
             setHomeBtn.text = TEXT_DELETE_HOME
             updateLocationView(textViewHomeLocation, appContext.appSP.getHomeLocation())
         } else {
             textViewHomeLocation.visibility = View.INVISIBLE
             setHomeBtn.visibility = View.INVISIBLE
+            fixSetHomeBtn.visibility = View.INVISIBLE
         }
 
         broadcastReceiver = (object : BroadcastReceiver() {
@@ -108,9 +114,11 @@ class MainActivity : AppCompatActivity() {
                 }
                 locationInfo?.accuracy!! <= 50 -> {
                     setHomeBtn.visibility = View.VISIBLE
+                    fixSetHomeBtn.visibility = View.VISIBLE
                 }
                 else -> {
                     setHomeBtn.visibility = View.INVISIBLE
+                    fixSetHomeBtn.visibility = View.INVISIBLE
                 }
             }
 
@@ -177,8 +185,13 @@ class MainActivity : AppCompatActivity() {
                         when {
                             locationInfo?.accuracy!! <= 50 -> {
                                 setHomeBtn.visibility = View.VISIBLE
+                                fixSetHomeBtn.visibility = View.VISIBLE
                             }
-                            else -> setHomeBtn.visibility = View.INVISIBLE
+                            else -> {
+                                setHomeBtn.visibility = View.INVISIBLE
+                                fixSetHomeBtn.visibility = View.INVISIBLE
+                            }
+
                         }
                     } else {
                         setHomeBtn.visibility = View.INVISIBLE
