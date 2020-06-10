@@ -14,6 +14,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -25,6 +26,8 @@ class MainActivity : AppCompatActivity() {
             get() = findViewById(R.id.trackingBtn)
     private val setHomeBtn : Button
             get() = findViewById(R.id.setHomeBtn)
+    private val fixSetHomeBtn : Button
+        get() = findViewById(R.id.setTopBtn)
     private val textViewHomeLocation: TextView
             get() = findViewById(R.id.textViewHomeLocation)
     private val textViewCurrLocation: TextView
@@ -33,6 +36,7 @@ class MainActivity : AppCompatActivity() {
             get() = applicationContext as GPSapp
     private var locationInfo: LocationInfo? = null
     private val gson: Gson = Gson()
+    lateinit var broadcastReceiver: BroadcastReceiver
 
     private val REQUEST_CODE_PERMISSION_GPS = 1234
     private val TEXT_SET_HOME = "Set location as home"
@@ -42,52 +46,76 @@ class MainActivity : AppCompatActivity() {
     private val LOG_PERMISSION = "permission"
     private val KEY_TRACK_TEXT = "track_btn_text"
     private val KEY_SET_HOME_TEXT = "set_home_btn_text"
-    private val KEY_HOME_LOCATION_VISIBILITY = "home_location_visibility"
     private val KEY_IS_RECORDING = "is_recording"
     private val KEY_LOCATION_INFO_OBJECT = "location_object"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        textViewHomeLocation.visibility = View.INVISIBLE
+//        setHomeBtn.visibility = View.INVISIBLE
         if (savedInstanceState != null) {
             trackingBtn.text = savedInstanceState.getString(KEY_TRACK_TEXT)
             setHomeBtn.text = savedInstanceState.getString(KEY_SET_HOME_TEXT)
-            textViewHomeLocation.visibility = savedInstanceState.getInt(KEY_HOME_LOCATION_VISIBILITY)
-            locationTracker.isRecording = savedInstanceState.getBoolean(KEY_IS_RECORDING)
+            locationTracker.isTracking = savedInstanceState.getBoolean(KEY_IS_RECORDING)
+            if (locationTracker.isTracking) {
+                locationTracker.startTracking()
+            }
             val locationObjectAsJson: String? = savedInstanceState.getString(KEY_LOCATION_INFO_OBJECT)
             if (locationObjectAsJson != null) {
                 val locationType = object : TypeToken<LocationInfo>(){}.type
                 locationInfo = gson.fromJson(locationObjectAsJson, locationType)
+                updateLocationView(textViewCurrLocation, locationInfo)
             }
-
         }
+
         setButtons()
-        val broadcastReceiver = (object : BroadcastReceiver() {
+
+        if (appContext.appSP.getHomeLocation() != null) {
+            Log.d("getHomeLocation", "home accuracy = ${appContext.appSP.getHomeLocation()?.accuracy}")
+            textViewHomeLocation.visibility = View.VISIBLE
+            setHomeBtn.visibility = View.VISIBLE
+            setHomeBtn.text = TEXT_DELETE_HOME
+            updateLocationView(textViewHomeLocation, appContext.appSP.getHomeLocation())
+        } else {
+            textViewHomeLocation.visibility = View.INVISIBLE
+            setHomeBtn.visibility = View.INVISIBLE
+        }
+
+        broadcastReceiver = (object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 Log.d("updateLocation", "updated location")
                 locationInfo = locationTracker.getLocationInfo()
-                updateLocationView()
-                Log.d("threads", "in receive curr thread = ${Thread.currentThread().name}")
+                updateLocationView(textViewCurrLocation, locationInfo)
             }
         })
         LocalBroadcastManager.getInstance(appContext)
             .registerReceiver(broadcastReceiver, IntentFilter("update_location"))
-        updateLocationView()
     }
 
     @SuppressLint("SetTextI18n")
-    private fun updateLocationView(){
+    private fun updateLocationView(textView: TextView, location: LocationInfo?){
+        if (location != null){
+            Log.d("updateLocationView", "isRecording = ${locationTracker.isTracking}")
+            textView.text = "Accuracy = ${location.accuracy}\n" +
+                    "Latitude = ${location.latitude}\n" +
+                    "Longitude = ${location.longitude}"
+        }
+
         if (locationInfo != null){
-            if (locationInfo?.latitude == null) {
-                textViewCurrLocation.text = "Something went wrong.\nMake sure GPS is on."
-            } else {
-                textViewCurrLocation.text = "Accuracy = ${locationInfo?.accuracy}\n" +
-                        "Latitude = ${locationInfo?.latitude}\n" +
-                        "Longitude = ${locationInfo?.longitude}"
+            when {
+                locationInfo?.latitude == null -> {
+                    textView.text = "Something went wrong.\nMake sure GPS is on."
+                }
+                locationInfo?.accuracy!! <= 50 -> {
+                    setHomeBtn.visibility = View.VISIBLE
+                }
+                else -> {
+                    setHomeBtn.visibility = View.INVISIBLE
+                }
             }
+
         } else {
-            textViewCurrLocation.text = "start tracking"
+            textViewCurrLocation.text = TEXT_START_TRACKING
         }
     }
 
@@ -115,18 +143,46 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        fixSetHomeBtn.setOnClickListener {
+            if (locationInfo != null){
+                appContext.appSP.deleteHomeLocation()
+                appContext.appSP.storeHomeLocation(locationInfo)
+                textViewHomeLocation.visibility = View.VISIBLE
+                setHomeBtn.text = TEXT_DELETE_HOME
+                updateLocationView(textViewHomeLocation, locationInfo)
+            } else {
+                Toast.makeText(applicationContext, "Start tracking first", Toast.LENGTH_LONG)
+                    .show()
+            }
+        }
+
         setHomeBtn.setOnClickListener {
-            // TODO - in case pressed before granted gps, and nothing to show
             when (setHomeBtn.text) {
                 TEXT_SET_HOME -> {
-                    // TODO - update the data to the sp.
-                    textViewHomeLocation.visibility = View.VISIBLE
-                    setHomeBtn.text = TEXT_DELETE_HOME
+                    if (locationInfo != null){
+                        appContext.appSP.storeHomeLocation(locationInfo)
+                        textViewHomeLocation.visibility = View.VISIBLE
+                        setHomeBtn.text = TEXT_DELETE_HOME
+                        updateLocationView(textViewHomeLocation, locationInfo)
+                    } else {
+                        Toast.makeText(applicationContext, "Start tracking first", Toast.LENGTH_LONG)
+                            .show()
+                    }
                 }
                 TEXT_DELETE_HOME -> {
-                    // TODO - delete the data from the sp as well
                     textViewHomeLocation.visibility = View.INVISIBLE
                     setHomeBtn.text = TEXT_SET_HOME
+                    appContext.appSP.deleteHomeLocation()
+                    if (locationInfo != null){
+                        when {
+                            locationInfo?.accuracy!! <= 50 -> {
+                                setHomeBtn.visibility = View.VISIBLE
+                            }
+                            else -> setHomeBtn.visibility = View.INVISIBLE
+                        }
+                    } else {
+                        setHomeBtn.visibility = View.INVISIBLE
+                    }
                 }
             }
         }
@@ -149,8 +205,8 @@ class MainActivity : AppCompatActivity() {
                     }
                     Log.d(LOG_PERMISSION, "Permission has been denied by user")
                 } else {
-                    // TODO - retrieve data
-
+                    trackingBtn.text = TEXT_STOP_TRACKING
+                    locationTracker.startTracking()
                     Log.d(LOG_PERMISSION, "Permission has been granted by user")
                 }
             }
@@ -164,19 +220,17 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        locationTracker.stopTracking()
+        locationTracker.shoutDownExecutor()
+        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastReceiver)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(KEY_TRACK_TEXT, trackingBtn.text as String?)
         outState.putString(KEY_SET_HOME_TEXT, setHomeBtn.text as String?)
-        outState.putInt(KEY_HOME_LOCATION_VISIBILITY, textViewHomeLocation.visibility)
-        outState.putBoolean(KEY_IS_RECORDING, locationTracker.isRecording)
+        outState.putBoolean(KEY_IS_RECORDING, locationTracker.isTracking)
         val locationObjectAsJson = gson.toJson(locationInfo)
         outState.putString(KEY_LOCATION_INFO_OBJECT, locationObjectAsJson)
     }
-
-    // TODO - save the last know location when exit the activity (flip the screen)
-    // TODO - unregister broadcast
-    // TODO - save the text of the buttons when flipping the phone
 }

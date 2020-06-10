@@ -11,25 +11,25 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import java.util.concurrent.Executor
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class LocationTracker(private var context: Context) {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var locationInfo: LocationInfo? = null
-    var isRecording: Boolean = false
-    private val bgExecutor: Executor = Executors.newSingleThreadExecutor()
+    var isTracking: Boolean = false
+    private val bgExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 
     private val LOG_TRACK = "trackingLog"
 
     fun startTracking() {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED) {
-            isRecording = true
+            isTracking = true
             val runnable = Runnable {
-                Log.d("threads", "curr thread = ${Thread.currentThread().name}")
-                while (isRecording){
-
+                while (isTracking){
+                    Log.d(LOG_TRACK, "tracking")
                     Thread.sleep(1000)
                     updateLocation()
 
@@ -63,8 +63,12 @@ class LocationTracker(private var context: Context) {
     }
 
     fun stopTracking() {
-        isRecording = false
+        isTracking = false
         Log.d(LOG_TRACK, "stop tracking")
+    }
+
+    fun shoutDownExecutor() {
+        bgExecutor.shutdown()
     }
 
     fun getLocationInfo(): LocationInfo? {

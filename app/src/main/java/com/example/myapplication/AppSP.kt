@@ -10,7 +10,7 @@ class AppSP(context: Context) {
     private val gson: Gson
     private val appContext: Context = context
     private val spForHomeLoc: SharedPreferences
-    private var homeLocationInfo: LocationInfo
+    private var homeLocationInfo: LocationInfo? = null
 
     companion object {
         private const val SP_LOCATION_FILE_NAME: String = "sp_location"
@@ -21,7 +21,7 @@ class AppSP(context: Context) {
     init {
         spForHomeLoc = appContext.getSharedPreferences(SP_LOCATION_FILE_NAME, Context.MODE_PRIVATE)
         gson = Gson()
-        homeLocationInfo = LocationInfo()
+        loadHomeLocation()
     }
 
     private fun loadHomeLocation(){
@@ -36,11 +36,8 @@ class AppSP(context: Context) {
         return homeLocationInfo
     }
 
-    fun setHomeLocation(homeLocationInfo: LocationInfo) {
+    fun storeHomeLocation(homeLocationInfo: LocationInfo?){
         this.homeLocationInfo = homeLocationInfo
-    }
-
-    fun storeHomeLocation(){
         val locationAsJso = gson.toJson(homeLocationInfo)
         val edit: SharedPreferences.Editor = spForHomeLoc.edit()
         edit.putString(GSON_KEY_LOCATION, locationAsJso).
@@ -52,6 +49,6 @@ class AppSP(context: Context) {
         val edit: SharedPreferences.Editor = spForHomeLoc.edit()
         edit.remove(GSON_KEY_LOCATION).
                 apply()
-        homeLocationInfo = LocationInfo()
+        homeLocationInfo = null
     }
 }
