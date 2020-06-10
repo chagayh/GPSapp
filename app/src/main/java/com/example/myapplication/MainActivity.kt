@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
             get() = findViewById(R.id.textViewCurrLocation)
     private val appContext: GPSapp
             get() = applicationContext as GPSapp
-    private var locationInfo: LocationInfo = LocationInfo()
+    private var locationInfo: LocationInfo? = null
     private val gson: Gson = Gson()
 
     private val REQUEST_CODE_PERMISSION_GPS = 1234
@@ -60,25 +60,35 @@ class MainActivity : AppCompatActivity() {
                 val locationType = object : TypeToken<LocationInfo>(){}.type
                 locationInfo = gson.fromJson(locationObjectAsJson, locationType)
             }
-            setLocationView()
+
         }
         setButtons()
         val broadcastReceiver = (object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 Log.d("updateLocation", "updated location")
                 locationInfo = locationTracker.getLocationInfo()
-                setLocationView()
+                updateLocationView()
+                Log.d("threads", "in receive curr thread = ${Thread.currentThread().name}")
             }
         })
         LocalBroadcastManager.getInstance(appContext)
             .registerReceiver(broadcastReceiver, IntentFilter("update_location"))
+        updateLocationView()
     }
 
     @SuppressLint("SetTextI18n")
-    private fun setLocationView(){
-        textViewCurrLocation.text = "Accuracy = ${locationInfo.accuracy}\n" +
-                "Latitude = ${locationInfo.latitude}\n" +
-                "Longitude = ${locationInfo.longitude}"
+    private fun updateLocationView(){
+        if (locationInfo != null){
+            if (locationInfo?.latitude == null) {
+                textViewCurrLocation.text = "Something went wrong.\nMake sure GPS is on."
+            } else {
+                textViewCurrLocation.text = "Accuracy = ${locationInfo?.accuracy}\n" +
+                        "Latitude = ${locationInfo?.latitude}\n" +
+                        "Longitude = ${locationInfo?.longitude}"
+            }
+        } else {
+            textViewCurrLocation.text = "start tracking"
+        }
     }
 
     private fun setButtons(){
@@ -154,7 +164,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

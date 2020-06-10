@@ -10,46 +10,64 @@ import androidx.core.app.ActivityCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
-class LocationTracker (private var context: Context) {
+class LocationTracker(private var context: Context) {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private var locationInfo: LocationInfo = LocationInfo()
+    private var locationInfo: LocationInfo? = null
     var isRecording: Boolean = false
+    private val bgExecutor: Executor = Executors.newSingleThreadExecutor()
 
     private val LOG_TRACK = "trackingLog"
 
     fun startTracking() {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-                            == PackageManager.PERMISSION_GRANTED) {
-            Log.d(LOG_TRACK, "start tracking")
+            == PackageManager.PERMISSION_GRANTED) {
+            isRecording = true
+            val runnable = Runnable {
+                Log.d("threads", "curr thread = ${Thread.currentThread().name}")
+                while (isRecording){
 
-            fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+                    Thread.sleep(1000)
+                    updateLocation()
 
-            fusedLocationClient.lastLocation
-                .addOnSuccessListener { location : Location? ->
-                    locationInfo = LocationInfo(location?.accuracy,
-                                                location?.latitude,
-                                                location?.longitude)
-                    Log.d(LOG_TRACK, "accuracy = ${locationInfo.accuracy}, " +
-                            "latitude = ${locationInfo.latitude}," +
-                            "longitude = ${locationInfo.longitude}")
-                    // Got last known location. In some rare situations this can be null.
-                    // null -> gps off, device recorded problem,
                     val intent = Intent("update_location")
                     LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
                 }
-        }
-        else {
+            }
+            bgExecutor.execute(runnable)
+        } else {
             Log.d(LOG_TRACK, "Permission not granted")
         }
     }
 
+    private fun updateLocation(){
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location : Location? ->
+                if (locationInfo == null) {
+                    locationInfo = LocationInfo(location?.accuracy,
+                                                location?.latitude,
+                                                location?.longitude)
+                } else {
+                    locationInfo?.accuracy  = location?.accuracy
+                    locationInfo?.latitude  = location?.latitude
+                    locationInfo?.longitude = location?.longitude
+                }
+                // Got last known location. In some rare situations this can be null:
+                // null -> gps off, device recorded problem,
+            }
+    }
+
     fun stopTracking() {
+        isRecording = false
         Log.d(LOG_TRACK, "stop tracking")
     }
 
-    fun getLocationInfo(): LocationInfo{
+    fun getLocationInfo(): LocationInfo? {
         return locationInfo
     }
 }
