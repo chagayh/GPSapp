@@ -6,16 +6,22 @@ import com.google.gson.Gson
 import android.util.Log
 import com.google.gson.reflect.TypeToken
 
-class AppSP(private val context: Context) {
-    private val gson: Gson = Gson()
-    private val spForHomeLoc: SharedPreferences =
-        context.getSharedPreferences(SP_LOCATION_FILE_NAME, Context.MODE_PRIVATE)
-    private var homeLocationInfo: LocationInfo? = LocationInfo()
+class AppSP(context: Context) {
+    private val gson: Gson
+    private val appContext: Context = context
+    private val spForHomeLoc: SharedPreferences
+    private var homeLocationInfo: LocationInfo
 
     companion object {
         private const val SP_LOCATION_FILE_NAME: String = "sp_location"
         private const val GSON_KEY_LOCATION: String = "sp_gson_location"
         private const val NULL_TAG: String = "init_sp"
+    }
+
+    init {
+        spForHomeLoc = appContext.getSharedPreferences(SP_LOCATION_FILE_NAME, Context.MODE_PRIVATE)
+        gson = Gson()
+        homeLocationInfo = LocationInfo()
     }
 
     private fun loadHomeLocation(){
@@ -46,6 +52,6 @@ class AppSP(private val context: Context) {
         val edit: SharedPreferences.Editor = spForHomeLoc.edit()
         edit.remove(GSON_KEY_LOCATION).
                 apply()
-        homeLocationInfo = null
+        homeLocationInfo = LocationInfo()
     }
 }

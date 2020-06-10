@@ -1,62 +1,91 @@
 package com.example.myapplication
 
-import android.annotation.SuppressLint
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import androidx.core.app.ActivityCompat
 
 class MainActivity : AppCompatActivity() {
 
     private val locationTracker = LocationTracker(this)
-    private val trackingBtn: Button = findViewById(R.id.trackingBtn)
-    private val setHomeBtn : Button = findViewById(R.id.setHomeBtn)
-    private val textViewHomeLocation: TextView = findViewById(R.id.textViewHomeLocation)
-    private val textViewCurrLocation: TextView = findViewById(R.id.textViewCurrLocation)
-    private val appContext: GPSapp = applicationContext as GPSapp
+    private var trackingBtn: Button? = null
+    private var setHomeBtn : Button? = null
+    private var textViewHomeLocation: TextView? = null
+    private var textViewCurrLocation: TextView? = null
+    private var appContext: GPSapp? = null
+
+    private val REQUEST_CODE_PERMISSION_GPS = 1234
+    private val TEXT_SET_HOME = "Set location as home"
+    private val TEXT_DELETE_HOME = "Delete home location"
+    private val TEXT_START_TRACKING = "Start Tracking"
+    private val TEXT_STOP_TRACKING = "Stop Tracking"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        setButtons()
-
+        trackingBtn = findViewById(R.id.trackingBtn)
+        setHomeBtn  = findViewById(R.id.setHomeBtn)
+        textViewHomeLocation = findViewById(R.id.textViewHomeLocation)
+        textViewCurrLocation = findViewById(R.id.textViewCurrLocation)
+        appContext = applicationContext as GPSapp
+//        setButtons()
     }
 
     private fun setButtons(){
         trackingBtn.setOnClickListener {
-            when (trackingBtn.text) {
-                "Start tracking" -> {
-                    locationTracker.startTracking()
-                    trackingBtn.text = "Stop Tracking"
+            when {
+                isPermissionGranted() -> {
+                    when (trackingBtn.text) {
+                        TEXT_START_TRACKING -> {
+                            trackingBtn.text = TEXT_STOP_TRACKING
+                            locationTracker.startTracking()
+                        }
+                        TEXT_STOP_TRACKING -> {
+                            trackingBtn.text = TEXT_START_TRACKING
+                            locationTracker.stopTracking()
+                        }
+                    }
                 }
-                "Stop tracking" -> {
-                    locationTracker.stopTracking()
-                    trackingBtn.text = "Start Tracking"
+                else -> {
+                    ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                        REQUEST_CODE_PERMISSION_GPS)
                 }
             }
-
         }
 
         setHomeBtn.setOnClickListener {
+            // TODO - in case pressed before granted gps, and nothing to show
             when (setHomeBtn.text) {
-                "Set location as home" -> {
+                TEXT_SET_HOME -> {
                     // TODO - update the data to the sp.
                     textViewHomeLocation.visibility = View.VISIBLE
-                    setHomeBtn.text = "Delete home location"
+                    setHomeBtn.text = TEXT_DELETE_HOME
                 }
-                "Delete home location" -> {
+                TEXT_DELETE_HOME -> {
                     // TODO - delete the data from the sp as well
                     textViewHomeLocation.visibility = View.INVISIBLE
-                    setHomeBtn.text = "Set location as home"
+                    setHomeBtn.text = TEXT_SET_HOME
                 }
             }
-
         }
+    }
+
+    private fun isPermissionGranted(): Boolean{
+        return (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED)
     }
 
     override fun onDestroy() {
         super.onDestroy()
 
     }
+
+    // TODO - save the last know location when exit the activity (flip the screen)
+    // TODO - broadcast
 }
