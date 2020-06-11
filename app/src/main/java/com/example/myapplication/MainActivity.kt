@@ -24,8 +24,8 @@ class MainActivity : AppCompatActivity() {
     private val locationTracker = LocationTracker(this)
     private val trackingBtn: Button
             get() = findViewById(R.id.trackingBtn)
-    private val setHomeBtn : Button
-            get() = findViewById(R.id.setHomeBtn)
+    private val deleteHomeBtn : Button
+            get() = findViewById(R.id.deleteHomeBtn)
     private val fixSetHomeBtn : Button
         get() = findViewById(R.id.setTopBtn)
     private val textViewHomeLocation: TextView
@@ -46,16 +46,37 @@ class MainActivity : AppCompatActivity() {
     private val LOG_PERMISSION = "permission"
     private val KEY_TRACK_TEXT = "track_btn_text"
     private val KEY_SET_HOME_TEXT = "set_home_btn_text"
-    private val KEY_IS_RECORDING = "is_recording"
+    private val KEY_IS_TRACKING = "is_recording"
     private val KEY_LOCATION_INFO_OBJECT = "location_object"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        loadDataFromBundle(savedInstanceState)
+
+        setButtons()
+
+        loadHomeLocationFromSP()
+
+        setBroadcast()
+    }
+
+    private fun loadHomeLocationFromSP() {
+        if (appContext.appSP.getHomeLocation() != null) {
+            textViewHomeLocation.visibility = View.VISIBLE
+            fixSetHomeBtn.visibility = if (locationInfo == null) View.INVISIBLE else View.VISIBLE
+            updateHomeLocationView(appContext.appSP.getHomeLocation())
+        } else {
+            textViewHomeLocation.visibility = View.INVISIBLE
+            fixSetHomeBtn.visibility = View.INVISIBLE
+        }
+    }
+
+    private fun loadDataFromBundle(savedInstanceState: Bundle?) {
         if (savedInstanceState != null) {
             trackingBtn.text = savedInstanceState.getString(KEY_TRACK_TEXT)
-            setHomeBtn.text = savedInstanceState.getString(KEY_SET_HOME_TEXT)
-            locationTracker.isTracking = savedInstanceState.getBoolean(KEY_IS_RECORDING)
+            locationTracker.isTracking = savedInstanceState.getBoolean(KEY_IS_TRACKING)
             if (locationTracker.isTracking) {
                 locationTracker.startTracking()
             }
@@ -63,35 +84,17 @@ class MainActivity : AppCompatActivity() {
             if (locationObjectAsJson != null) {
                 val locationType = object : TypeToken<LocationInfo>(){}.type
                 locationInfo = gson.fromJson(locationObjectAsJson, locationType)
-                updateLocationView(textViewCurrLocation, locationInfo)
+                updateCurrLocationView()
             }
         }
+    }
 
-        setButtons()
-
-        if (appContext.appSP.getHomeLocation() != null) {
-            Log.d("getHomeLocation", "home accuracy = ${appContext.appSP.getHomeLocation()?.accuracy}")
-            textViewHomeLocation.visibility = View.VISIBLE
-            setHomeBtn.visibility = View.VISIBLE
-            if (locationInfo == null)
-            {
-                fixSetHomeBtn.visibility = View.INVISIBLE
-            } else {
-                fixSetHomeBtn.visibility = View.VISIBLE
-            }
-            setHomeBtn.text = TEXT_DELETE_HOME
-            updateLocationView(textViewHomeLocation, appContext.appSP.getHomeLocation())
-        } else {
-            textViewHomeLocation.visibility = View.INVISIBLE
-            setHomeBtn.visibility = View.INVISIBLE
-            fixSetHomeBtn.visibility = View.INVISIBLE
-        }
-
+    private fun setBroadcast() {
         broadcastReceiver = (object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 Log.d("updateLocation", "updated location")
                 locationInfo = locationTracker.getLocationInfo()
-                updateLocationView(textViewCurrLocation, locationInfo)
+                updateCurrLocationView()
             }
         })
         LocalBroadcastManager.getInstance(appContext)
@@ -99,35 +102,37 @@ class MainActivity : AppCompatActivity() {
     }
 
     @SuppressLint("SetTextI18n")
-    private fun updateLocationView(textView: TextView, location: LocationInfo?){
+    private fun updateHomeLocationView(location: LocationInfo?){
         if (location != null){
             Log.d("updateLocationView", "isRecording = ${locationTracker.isTracking}")
-            textView.text = "Accuracy = ${location.accuracy}\n" +
-                    "Latitude = ${location.latitude}\n" +
-                    "Longitude = ${location.longitude}"
+            textViewHomeLocation.text = "Your home location is defined as\n<${location.latitude}, " +
+                    "${location.longitude}>"
+            deleteHomeBtn.visibility =  View.VISIBLE
         }
+    }
 
-        if (locationInfo != null){
-            when {
-                locationInfo?.latitude == null -> {
-                    textView.text = "Something went wrong.\nMake sure GPS is on."
-                }
-                locationInfo?.accuracy!! <= 50 -> {
-                    setHomeBtn.visibility = View.VISIBLE
-                    fixSetHomeBtn.visibility = View.VISIBLE
-                }
-                else -> {
-                    setHomeBtn.visibility = View.INVISIBLE
-                    fixSetHomeBtn.visibility = View.INVISIBLE
-                }
-            }
+    @SuppressLint("SetTextI18n")
+    private fun updateCurrLocationView(){
+        if (locationInfo != null && locationInfo?.latitude != null){
+            Log.d("updateLocationView", "isRecording = ${locationTracker.isTracking}")
+            textViewCurrLocation.text = "Accuracy = ${locationInfo?.accuracy}\n" +
+                    "Latitude = ${locationInfo?.latitude}\n" +
+                    "Longitude = ${locationInfo?.longitude}"
 
+            fixSetHomeBtn.visibility = if (locationInfo?.accuracy!! <= 50) View.VISIBLE
+                                       else View.INVISIBLE
         } else {
             textViewCurrLocation.text = TEXT_START_TRACKING
         }
     }
 
     private fun setButtons(){
+        deleteHomeBtn.visibility = View.INVISIBLE
+        if (locationInfo != null){
+            fixSetHomeBtn.visibility = if (locationInfo?.accuracy!! <= 50) View.VISIBLE
+                                       else View.INVISIBLE
+        }
+
         trackingBtn.setOnClickListener {
             when {
                 isPermissionGranted() -> {
@@ -156,48 +161,17 @@ class MainActivity : AppCompatActivity() {
                 appContext.appSP.deleteHomeLocation()
                 appContext.appSP.storeHomeLocation(locationInfo)
                 textViewHomeLocation.visibility = View.VISIBLE
-                setHomeBtn.text = TEXT_DELETE_HOME
-                updateLocationView(textViewHomeLocation, locationInfo)
+                updateHomeLocationView(locationInfo)
             } else {
                 Toast.makeText(applicationContext, "Start tracking first", Toast.LENGTH_LONG)
                     .show()
             }
         }
 
-        setHomeBtn.setOnClickListener {
-            when (setHomeBtn.text) {
-                TEXT_SET_HOME -> {
-                    if (locationInfo != null){
-                        appContext.appSP.storeHomeLocation(locationInfo)
-                        textViewHomeLocation.visibility = View.VISIBLE
-                        setHomeBtn.text = TEXT_DELETE_HOME
-                        updateLocationView(textViewHomeLocation, locationInfo)
-                    } else {
-                        Toast.makeText(applicationContext, "Start tracking first", Toast.LENGTH_LONG)
-                            .show()
-                    }
-                }
-                TEXT_DELETE_HOME -> {
-                    textViewHomeLocation.visibility = View.INVISIBLE
-                    setHomeBtn.text = TEXT_SET_HOME
-                    appContext.appSP.deleteHomeLocation()
-                    if (locationInfo != null){
-                        when {
-                            locationInfo?.accuracy!! <= 50 -> {
-                                setHomeBtn.visibility = View.VISIBLE
-                                fixSetHomeBtn.visibility = View.VISIBLE
-                            }
-                            else -> {
-                                setHomeBtn.visibility = View.INVISIBLE
-                                fixSetHomeBtn.visibility = View.INVISIBLE
-                            }
-
-                        }
-                    } else {
-                        setHomeBtn.visibility = View.INVISIBLE
-                    }
-                }
-            }
+        deleteHomeBtn.setOnClickListener {
+            textViewHomeLocation.visibility = View.INVISIBLE
+            deleteHomeBtn.visibility = View.INVISIBLE
+            appContext.appSP.deleteHomeLocation()
         }
     }
 
@@ -215,6 +189,10 @@ class MainActivity : AppCompatActivity() {
                         // reached here? means we asked the user for this permission more than once,
                         // and they still refuse. This would be a good time to open up a dialog
                         // explaining why we need this permission
+                        Toast.makeText(applicationContext
+                            ,"We need your GPS permission in order to start tracking"
+                            ,Toast.LENGTH_LONG)
+                            .show()
                     }
                     Log.d(LOG_PERMISSION, "Permission has been denied by user")
                 } else {
@@ -241,8 +219,7 @@ class MainActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(KEY_TRACK_TEXT, trackingBtn.text as String?)
-        outState.putString(KEY_SET_HOME_TEXT, setHomeBtn.text as String?)
-        outState.putBoolean(KEY_IS_RECORDING, locationTracker.isTracking)
+        outState.putBoolean(KEY_IS_TRACKING, locationTracker.isTracking)
         val locationObjectAsJson = gson.toJson(locationInfo)
         outState.putString(KEY_LOCATION_INFO_OBJECT, locationObjectAsJson)
     }

@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -59,6 +60,12 @@ class LocationTracker(private var context: Context) {
                 }
                 // Got last known location. In some rare situations this can be null:
                 // null -> gps off, device recorded problem,
+                if (location == null) {
+                    Toast.makeText(context,
+                        "Something went wrong.\nMake sure your GPS is on",
+                        Toast.LENGTH_SHORT)
+                        .show()
+                }
             }
     }
 
