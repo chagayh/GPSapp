@@ -72,6 +72,7 @@ class LocationTracker(private var context: Context) {
     fun stopTracking() {
         isTracking = false
         Log.d(LOG_TRACK, "stop tracking")
+        // TODO - add a broadcast that tracking stopped
     }
 
     fun shoutDownExecutor() {
