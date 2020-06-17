@@ -336,7 +336,6 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         locationTracker.stopTracking()
-        locationTracker.shoutDownExecutor()
         LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastLocationReceiver)
         LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStartTrackingReceiver)
         LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStopTrackingReceiver)
@@ -351,4 +350,3 @@ class MainActivity : AppCompatActivity() {
         outState.putString(KEY_LOCATION_INFO_OBJECT, locationObjectAsJson)
     }
 }
-
