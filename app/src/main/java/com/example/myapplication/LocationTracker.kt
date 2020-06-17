@@ -28,6 +28,10 @@ class LocationTracker(private var context: Context) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED) {
             isTracking = true
+
+            val intent = Intent("start_tracking")
+            LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+
             val runnable = Runnable {
                 while (isTracking){
                     Log.d(LOG_TRACK, "tracking")
@@ -72,6 +76,8 @@ class LocationTracker(private var context: Context) {
     fun stopTracking() {
         isTracking = false
         Log.d(LOG_TRACK, "stop tracking")
+        val intent = Intent("stop_tracking")
+        LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
         // TODO - add a broadcast that tracking stopped
     }
 

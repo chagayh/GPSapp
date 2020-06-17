@@ -33,6 +33,8 @@ class MainActivity : AppCompatActivity() {
         get() = findViewById(R.id.testSMSBtn)
     private val setPhoneNumBtn: Button
         get() = findViewById(R.id.setPhoneNumBtn)
+    private val deletePhoneNumBtn: Button
+        get() = findViewById(R.id.deletePhoneNumBtn)
     private val textViewHomeLocation: TextView
         get() = findViewById(R.id.textViewHomeLocation)
     private val textViewCurrLocation: TextView
@@ -42,6 +44,8 @@ class MainActivity : AppCompatActivity() {
     private var locationInfo: LocationInfo? = null
     private val gson: Gson = Gson()
     lateinit var broadcastLocationReceiver: BroadcastReceiver
+    lateinit var broadcastStartTrackingReceiver: BroadcastReceiver
+    lateinit var broadcastStopTrackingReceiver: BroadcastReceiver
 
     lateinit var broadcastSendSmsReceiver: BroadcastReceiver
 
@@ -71,6 +75,7 @@ class MainActivity : AppCompatActivity() {
     private fun loadPhoneNumberFromSP() {
         if (appContext.appSP.getPhoneNumber() != null) {
             testSmsBtn.visibility = View.VISIBLE
+            deletePhoneNumBtn.visibility = View.VISIBLE
         }
     }
 
@@ -113,6 +118,27 @@ class MainActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(appContext)
             .registerReceiver(broadcastLocationReceiver, IntentFilter("update_location"))
 
+        broadcastStartTrackingReceiver = (object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                Log.d("start_tracking", "start tracking")
+                locationInfo = locationTracker.getLocationInfo()
+                Toast.makeText(applicationContext, "Start tracking", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        })
+        LocalBroadcastManager.getInstance(appContext)
+            .registerReceiver(broadcastStartTrackingReceiver, IntentFilter("start_tracking"))
+
+        broadcastStopTrackingReceiver = (object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                Log.d("stop_tracking", "stopped tracking")
+                Toast.makeText(applicationContext, "Stopped tracking", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        })
+        LocalBroadcastManager.getInstance(appContext)
+            .registerReceiver(broadcastStopTrackingReceiver, IntentFilter("stop_tracking"))
+
         broadcastSendSmsReceiver  = LocalSendSmsBroadcastReceiver(this, appContext)
 
         LocalBroadcastManager.getInstance(appContext)
@@ -147,6 +173,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setButtons() {
         deleteHomeBtn.visibility = View.INVISIBLE
+        deletePhoneNumBtn.visibility = View.INVISIBLE
         testSmsBtn.visibility = View.INVISIBLE
 
         if (locationInfo != null) {
@@ -193,6 +220,14 @@ class MainActivity : AppCompatActivity() {
             LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
         }
 
+        deletePhoneNumBtn.setOnClickListener {
+            appContext.appSP.deletePhoneNumber()
+            testSmsBtn.visibility = View.INVISIBLE
+            deletePhoneNumBtn.visibility = View.INVISIBLE
+            Toast.makeText(applicationContext, "Deleted phone number", Toast.LENGTH_SHORT)
+                .show()
+        }
+
         fixSetHomeBtn.setOnClickListener {
             if (locationInfo != null) {
                 appContext.appSP.deleteHomeLocation()
@@ -237,6 +272,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     appContext.appSP.storePhoneNumber(input.text.toString())
                     testSmsBtn.visibility = View.VISIBLE
+                    deletePhoneNumBtn.visibility = View.VISIBLE
                 }
             }
             setNegativeButton("cancel") { _: DialogInterface, _: Int -> }
@@ -302,6 +338,8 @@ class MainActivity : AppCompatActivity() {
         locationTracker.stopTracking()
         locationTracker.shoutDownExecutor()
         LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastLocationReceiver)
+        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStartTrackingReceiver)
+        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStopTrackingReceiver)
         LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastSendSmsReceiver)
     }
 

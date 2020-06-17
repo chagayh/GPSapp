@@ -47,9 +47,17 @@ class AppSP(context: Context) {
         apply()
     }
 
+    fun deletePhoneNumber() {
+        val edit: SharedPreferences.Editor = spForGPSapp.edit()
+        edit.remove(KEY_PHONE_NUMBER).
+        apply()
+        phoneNumber = null
+    }
+
     fun getHomeLocation(): LocationInfo? {
         return homeLocationInfo
     }
+
     fun getPhoneNumber(): String? {
         return phoneNumber
     }
