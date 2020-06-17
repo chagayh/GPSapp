@@ -12,7 +12,7 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 
 class LocalSendSmsBroadcastReceiver(private val context: Context,
-                                    private val appContext: GPSapp): BroadcastReceiver() {
+                                    private val notificationFireHelper: NotificationFireHelper): BroadcastReceiver() {
     public val PHONE: String = "PHONE"
     public val CONTENT: String = "CONTENT"
     private val REQUEST_CODE_PERMISSION_SMS = 1112
@@ -45,7 +45,7 @@ class LocalSendSmsBroadcastReceiver(private val context: Context,
             smsContent,
             null,
             null)
-        appContext.notificationFireHelper.fireNotification("sending sms to $phoneNumber: $smsContent")
+        notificationFireHelper.fireNotification("sending sms to $phoneNumber: $smsContent")
     }
 
     private fun checkPermission(): Boolean {

@@ -47,8 +47,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var broadcastStartTrackingReceiver: BroadcastReceiver
     lateinit var broadcastStopTrackingReceiver: BroadcastReceiver
 
-    lateinit var broadcastSendSmsReceiver: BroadcastReceiver
-
     private val REQUEST_CODE_PERMISSION_GPS = 1234
     private val REQUEST_CODE_PERMISSION_SMS = 1
     private val TEXT_START_TRACKING = "Start Tracking"
@@ -138,11 +136,6 @@ class MainActivity : AppCompatActivity() {
         })
         LocalBroadcastManager.getInstance(appContext)
             .registerReceiver(broadcastStopTrackingReceiver, IntentFilter("stop_tracking"))
-
-        broadcastSendSmsReceiver  = LocalSendSmsBroadcastReceiver(this, appContext)
-
-        LocalBroadcastManager.getInstance(appContext)
-            .registerReceiver(broadcastSendSmsReceiver, IntentFilter("POST_PC.ACTION_SEND_SMS"))
     }
 
     @SuppressLint("SetTextI18n")
@@ -339,7 +332,6 @@ class MainActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastLocationReceiver)
         LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStartTrackingReceiver)
         LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStopTrackingReceiver)
-        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastSendSmsReceiver)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
