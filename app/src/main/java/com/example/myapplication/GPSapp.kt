@@ -3,7 +3,12 @@ package com.example.myapplication
 import android.app.Application
 import android.content.IntentFilter
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import java.security.AccessController.getContext
+import androidx.work.Constraints
+import androidx.work.OneTimeWorkRequest
+import androidx.work.PeriodicWorkRequest
+import androidx.work.WorkManager
+import java.util.concurrent.TimeUnit
+import java.util.stream.DoubleStream.builder
 
 class GPSapp: Application() {
     lateinit var appSP: AppSP
@@ -13,6 +18,14 @@ class GPSapp: Application() {
         super.onCreate()
         appSP = AppSP(this)
         notificationFireHelper = NotificationFireHelper(this)
+
+        val request = PeriodicWorkRequest.Builder(
+            CustomAsyncWorker::class.java,
+            15,
+            TimeUnit.MINUTES)
+//            .setConstraints(Constraints.)
+            .build()
+        val workManager = WorkManager.getInstance(this)
 
         val broadcastSendSmsReceiver  = LocalSendSmsBroadcastReceiver(this, notificationFireHelper)
 
