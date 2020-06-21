@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Location
 import android.location.LocationManager
 import android.os.Looper
 import android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS
@@ -22,7 +23,6 @@ class LocationTracker(private val context: Context) {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var locationInfo: LocationInfo? = null
     var isTracking: Boolean = false
-    private val bgExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private var locationCallback: LocationCallback
 
 
@@ -37,6 +37,7 @@ class LocationTracker(private val context: Context) {
                     locationResult.lastLocation.latitude,
                     locationResult.lastLocation.longitude
                 )
+
                 val intent = Intent("update_location")
                 LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
             }
@@ -105,11 +106,6 @@ class LocationTracker(private val context: Context) {
         Log.d(LOG_TRACK, "stop tracking")
         val intent = Intent("stop_tracking")
         LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
-        // TODO - add a broadcast that tracking stopped
-    }
-
-    fun shoutDownExecutor() {
-        bgExecutor.shutdown()
     }
 
     fun getLocationInfo(): LocationInfo? {

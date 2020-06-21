@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.*
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.os.Bundle
@@ -110,6 +111,23 @@ class MainActivity : AppCompatActivity() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 Log.d("updateLocation", "updated location")
                 locationInfo = locationTracker.getLocationInfo()
+
+                when (val lastLocation = appContext.appSP.getLastLocation()) {
+                    null -> appContext.appSP.storeLastLocation(locationInfo)
+                    else -> {
+                        val results = FloatArray(5) // TODO - check
+                        Location.distanceBetween(
+                            locationInfo?.latitude!!,
+                            locationInfo!!.longitude!!,
+                            lastLocation.latitude!!,
+                            lastLocation.longitude!!,
+                            results
+                        )
+                        if (results[0] > 50) {
+                            appContext.appSP.storeLastLocation(locationInfo)
+                        }
+                    }
+                }
                 updateCurrLocationView()
             }
         })

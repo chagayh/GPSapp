@@ -11,11 +11,13 @@ class AppSP(context: Context) {
     private val appContext: Context = context
     private val spForGPSapp: SharedPreferences
     private var homeLocationInfo: LocationInfo? = null
+    private var lastLocationInfo: LocationInfo? = null
     private var phoneNumber: String? = null
 
     companion object {
         private const val SP_LOCATION_FILE_NAME: String = "sp_location"
-        private const val GSON_KEY_LOCATION: String = "sp_gson_location"
+        private const val GSON_KEY_HOME_LOCATION: String = "sp_gson_home_location"
+        private const val GSON_KEY_LAST_LOCATION: String = "sp_gson_last_location"
         private const val KEY_PHONE_NUMBER: String = "phone_number"
         private const val NULL_TAG: String = "init_sp"
     }
@@ -25,10 +27,11 @@ class AppSP(context: Context) {
         gson = Gson()
         loadHomeLocation()
         loadPhoneNumber()
+        loadLastLocation()
     }
 
     private fun loadHomeLocation(){
-        val locAsJason: String? = spForGPSapp.getString(GSON_KEY_LOCATION, null)
+        val locAsJason: String? = spForGPSapp.getString(GSON_KEY_HOME_LOCATION, null)
         if (locAsJason != null) {
             val locationType = object : TypeToken<LocationInfo>(){}.type
             homeLocationInfo = gson.fromJson(locAsJason, locationType)
@@ -58,6 +61,10 @@ class AppSP(context: Context) {
         return homeLocationInfo
     }
 
+    fun getLastLocation(): LocationInfo? {
+        return lastLocationInfo
+    }
+
     fun getPhoneNumber(): String? {
         return phoneNumber
     }
@@ -66,14 +73,30 @@ class AppSP(context: Context) {
         this.homeLocationInfo = homeLocationInfo
         val locationAsJso = gson.toJson(homeLocationInfo)
         val edit: SharedPreferences.Editor = spForGPSapp.edit()
-        edit.putString(GSON_KEY_LOCATION, locationAsJso).
+        edit.putString(GSON_KEY_HOME_LOCATION, locationAsJso).
                 apply()
+    }
+
+    fun storeLastLocation(location: LocationInfo?){
+        this.lastLocationInfo = location
+        val locationAsJso = gson.toJson(location)
+        val edit: SharedPreferences.Editor = spForGPSapp.edit()
+        edit.putString(GSON_KEY_LAST_LOCATION, locationAsJso).
+        apply()
+    }
+
+    private fun loadLastLocation(){
+        val locAsJason: String? = spForGPSapp.getString(GSON_KEY_LAST_LOCATION, null)
+        if (locAsJason != null) {
+            val locationType = object : TypeToken<LocationInfo>(){}.type
+            lastLocationInfo = gson.fromJson(locAsJason, locationType)
+        }
     }
 
     fun deleteHomeLocation() {
         Log.d(NULL_TAG, "home loc = $homeLocationInfo")
         val edit: SharedPreferences.Editor = spForGPSapp.edit()
-        edit.remove(GSON_KEY_LOCATION).
+        edit.remove(GSON_KEY_HOME_LOCATION).
                 apply()
         homeLocationInfo = null
     }

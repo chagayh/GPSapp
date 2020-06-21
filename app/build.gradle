@@ -42,5 +42,8 @@ dependencies {
     implementation "androidx.work:work-runtime:$work_version"
     implementation "androidx.work:work-runtime-ktx:$work_version"
     implementation "androidx.concurrent:concurrent-futures:1.0.0"
+    // optional - Test helpers
+    androidTestImplementation "androidx.work:work-testing:$work_version"
+
 
 }

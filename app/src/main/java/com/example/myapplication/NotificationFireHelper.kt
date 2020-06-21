@@ -44,16 +44,10 @@ class NotificationFireHelper(private val context: Context) {
 
     private fun actualFire(msg: String) {
 
-        val intentToOpenBlue = Intent(context, MainActivity::class.java)    // TODO - change if needed
-        intentToOpenBlue.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-
-        val pending = PendingIntent.getActivity(context, 123, intentToOpenBlue, 0)
-
         val notification: Notification = NotificationCompat.Builder(context, channelId)
                 .setSmallIcon(R.drawable.home)
                 .setContentText(msg)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(pending)
                 .build()
 
 
