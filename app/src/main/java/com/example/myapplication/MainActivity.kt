@@ -9,6 +9,7 @@ import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.os.Bundle
+import android.provider.Settings
 import android.text.InputType
 import android.util.Log
 import android.view.View
@@ -47,6 +48,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var broadcastLocationReceiver: BroadcastReceiver
     lateinit var broadcastStartTrackingReceiver: BroadcastReceiver
     lateinit var broadcastStopTrackingReceiver: BroadcastReceiver
+    lateinit var broadcastGpsOffReceiver: BroadcastReceiver
+
 
     private val REQUEST_CODE_PERMISSION_GPS = 1234
     private val REQUEST_CODE_PERMISSION_SMS = 1
@@ -115,7 +118,7 @@ class MainActivity : AppCompatActivity() {
                 when (val lastLocation = appContext.appSP.getLastLocation()) {
                     null -> appContext.appSP.storeLastLocation(locationInfo)
                     else -> {
-                        val results = FloatArray(5) // TODO - check
+                        val results = FloatArray(5)
                         Location.distanceBetween(
                             locationInfo?.latitude!!,
                             locationInfo!!.longitude!!,
@@ -144,6 +147,17 @@ class MainActivity : AppCompatActivity() {
         })
         LocalBroadcastManager.getInstance(appContext)
             .registerReceiver(broadcastStartTrackingReceiver, IntentFilter("start_tracking"))
+
+        broadcastGpsOffReceiver = (object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                Log.d("gps_off", "gps is off")
+//                buildAlertMessageNoGps()  // TODO - not working
+                Toast.makeText(context, "Make sure GPS is on", Toast.LENGTH_SHORT)
+                    .show()
+            }
+        })
+        LocalBroadcastManager.getInstance(appContext)
+            .registerReceiver(broadcastGpsOffReceiver, IntentFilter("gps_off"))
 
         broadcastStopTrackingReceiver = (object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -291,6 +305,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun buildAlertMessageNoGps(){
+        val builder = android.app.AlertDialog.Builder(this)
+        builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
+            .setCancelable(false)
+            .setPositiveButton("Yes") { dialog, id ->   // TODO
+                val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+//                startActivity(intent)   // TODO
+            }
+            .setNegativeButton("No") { dialog, id ->
+                dialog.cancel()
+            }
+        val alert: android.app.AlertDialog = builder.create()
+        alert.show()
+    }
+
     override fun onRequestPermissionsResult(requestCode: Int,
                                             permissions: Array<String>,
                                             grantResults: IntArray) {
@@ -350,6 +379,7 @@ class MainActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastLocationReceiver)
         LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStartTrackingReceiver)
         LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStopTrackingReceiver)
+        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastGpsOffReceiver)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

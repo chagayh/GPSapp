@@ -1,10 +1,7 @@
 package com.example.myapplication
 
 import android.Manifest
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
@@ -30,9 +27,7 @@ class CustomAsyncWorker(private val context: Context, workerParams: WorkerParame
     private var lastLocation: LocationInfo? = null
     private var currLocation: LocationInfo? = null
     private var homeLocation: LocationInfo? = null
-    private val fusedLocationClient: FusedLocationProviderClient
-        get() = LocationServices.getFusedLocationProviderClient(context)
-    private lateinit var locationCallback: LocationCallback
+    private val locationTracker: LocationTracker = LocationTracker(context)
     private val appContext: GPSapp
         get() = applicationContext as GPSapp
 
@@ -43,8 +38,9 @@ class CustomAsyncWorker(private val context: Context, workerParams: WorkerParame
             this.callback = callback
             return@getFuture null
         }
+        
+        appContext.notificationFireHelper.fireNotification("start")
 
-        Log.d("CustomAsyncWorker", "In Do Work of custom worker")
         if (!hasPermissions() || !hasStoredHomePhoneData()){
             Log.d("CustomAsyncWorker", "first if")
             this.callback?.set(Result.success())
@@ -53,60 +49,11 @@ class CustomAsyncWorker(private val context: Context, workerParams: WorkerParame
             Log.d("CustomAsyncWorker", "second if")
             this.callback?.set(Result.success())
         }
-
-        startTracking()
-
-
-        return future
-    }
-
-//    private fun getLocation(pendingTask: Task<Location>?) {
-//        pendingTask?.addOnCompleteListener { task ->
-//            if (task.isSuccessful) {
-//
-//            }
-//        }
-//    }
-
-    private fun doWork() {
-        Log.d("CustomAsyncWorker", "In Do Work of custom worker")
-        Log.d("CustomAsyncWorker", "homeLocation = ${appContext.appSP.getHomeLocation()}")
-        appContext.notificationFireHelper.fireNotification("started working in BG")
-
-        if (!hasPermissions() || !hasStoredHomePhoneData()){
-            Log.d("CustomAsyncWorker", "first if")
-            this.callback?.set(Result.success())
-        }
-
-        if (isGpsOff()){
-            Log.d("CustomAsyncWorker", "second if")
-            this.callback?.set(Result.success())
-        }
-
-        startTracking()
 
         placeReceiver()
-//        lastLocation = appContext.appSP.getLastLocation()
-//
-//        if (lastLocation == null || isCloseEnough(lastLocation)){
-//            Log.d("CustomAsyncWorker", "third if")
-//            appContext.notificationFireHelper.fireNotification("third")
-//            appContext.appSP.storeLastLocation(currLocation)
-//        } else {
-//            when {
-//                isCloseEnough(homeLocation) -> {
-//                    val intent = Intent("POST_PC.ACTION_SEND_SMS")
-//                    intent.putExtra("PHONE", appContext.appSP.getPhoneNumber())
-//                    intent.putExtra("CONTENT",  "Honey I'm Home!")
-//                    LocalBroadcastManager.getInstance(myContext).sendBroadcast(intent)
-//                }
-//                else -> {
-//                    appContext.appSP.storeLastLocation(currLocation)
-//                }
-//            }
-//        }
+        locationTracker.startTracking()
 
-        this.callback?.set(Result.success())
+        return future
     }
 
     private fun isGpsOff(): Boolean{
@@ -115,39 +62,6 @@ class CustomAsyncWorker(private val context: Context, workerParams: WorkerParame
             return true
         }
         return false
-    }
-
-    private fun startTracking(){
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(locationResult: LocationResult) {
-                // do work here
-                val current = locationResult.lastLocation
-                if (current.accuracy < 50){
-                    currLocation = LocationInfo(current.accuracy, current.latitude, current.longitude)
-                    stopTracking()
-                }
-            }
-        }
-
-        // Create the location request to start receiving updates
-        val locationRequest = LocationRequest()
-        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        locationRequest.interval = 2000
-        locationRequest.fastestInterval = 1000
-
-        val builder = LocationSettingsRequest.Builder()
-        builder.addLocationRequest(locationRequest)
-        val locationSettingsRequest = builder.build()
-
-        val settingsClient = LocationServices.getSettingsClient(context)
-        settingsClient.checkLocationSettings(locationSettingsRequest)
-
-        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback,
-            Looper.myLooper())
-    }
-
-    private fun stopTracking(){
-        fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
     private fun isCloseEnough(location: LocationInfo?): Boolean{
@@ -186,37 +100,35 @@ class CustomAsyncWorker(private val context: Context, workerParams: WorkerParame
         this.receiver = object : BroadcastReceiver() {
             // notice that the fun onReceive() will get called in the future, not now
             override fun onReceive(context: Context?, intent: Intent?) {
-                // got broadcast!
+                // got broadcast! - there is new location
                 lastLocation = appContext.appSP.getLastLocation()
+                currLocation = locationTracker.getLocationInfo()
 
                 if (lastLocation == null || isCloseEnough(lastLocation)){
-                    Log.d("CustomAsyncWorker", "third if")
-                    appContext.notificationFireHelper.fireNotification("third")
+                    Log.d("CustomAsyncWorker", "last = null || close enough")
                     appContext.appSP.storeLastLocation(currLocation)
                 } else {
-                    when {
-                        isCloseEnough(homeLocation) -> {
+                    if (isCloseEnough(homeLocation))  {
                             val phoneIntent = Intent("POST_PC.ACTION_SEND_SMS")
                             phoneIntent.putExtra("PHONE", appContext.appSP.getPhoneNumber())
                             phoneIntent.putExtra("CONTENT",  "Honey I'm Home!")
-                            LocalBroadcastManager.getInstance(this@CustomAsyncWorker.context).sendBroadcast(phoneIntent)
-                        }
-                        else -> {
-                            appContext.appSP.storeLastLocation(currLocation)
+                        if (context != null) {
+                            LocalBroadcastManager.getInstance(context).sendBroadcast(phoneIntent)
                         }
                     }
+                    appContext.appSP.storeLastLocation(currLocation)
                 }
                 onReceivedBroadcast()
             }
         }
-
-        this.applicationContext.registerReceiver(this.receiver, IntentFilter("my_data_broadcast"))
+        this.context.registerReceiver(this.receiver, IntentFilter("update_location"))
     }
 
     // 3. when the broadcast receiver fired, we finished the work!
     // so we will clean all and call the callback to tell WorkManager that we are DONE
     private fun onReceivedBroadcast(){
-        this.applicationContext.unregisterReceiver(this.receiver)
+        this.context.unregisterReceiver(this.receiver)
+        locationTracker.stopTracking()
 
         receiver = null
         lastLocation = null

@@ -44,21 +44,6 @@ class LocationTracker(private val context: Context) {
         }
     }
 
-    private fun buildAlertMessageNoGps(){
-        val builder = AlertDialog.Builder(context)
-        builder.setMessage("Your GPS seems to be disabled, do you want to enable it?")
-            .setCancelable(false)
-            .setPositiveButton("Yes") { dialog, id ->   // TODO
-                val intent = Intent(ACTION_LOCATION_SOURCE_SETTINGS)
-//                startActivity(intent)   // TODO
-            }
-            .setNegativeButton("No") { dialog, id ->
-                dialog.cancel()
-            }
-        val alert: AlertDialog  = builder.create()
-        alert.show()
-    }
-
     private fun startLocationUpdates() {
 
         // Create the location request to start receiving updates
@@ -89,8 +74,8 @@ class LocationTracker(private val context: Context) {
             val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager?
             if (locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == false) {
 //                buildAlertMessageNoGps()
-                Toast.makeText(context, "Make sure GPS is on", Toast.LENGTH_SHORT)
-                    .show()
+                val intent = Intent("gps_off")
+                LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
             } else {
                 isTracking = true
                 startLocationUpdates()
