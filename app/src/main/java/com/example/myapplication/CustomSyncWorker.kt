@@ -32,36 +32,36 @@ class CustomSyncWorker(private val context: Context, workerParams: WorkerParamet
         Log.d("startJob", "homeLocation = ${appContext.appSP.getHomeLocation()}")
         appContext.notificationFireHelper.fireNotification("started working in BG")
 
-        if (!hasPermissions() || !hasStoredHomePhoneData()){
-            Log.d("startJob", "first if")
-            return Result.success()
-        }
-
-        if (isGpsOff()){
-            Log.d("startJob", "second if")
-            return Result.success()
-        }
-
-        startTracking()
-        lastLocation = appContext.appSP.getLastLocation()
-
-        if (lastLocation == null || isCloseEnough(lastLocation)){
-            Log.d("startJob", "third if")
-            appContext.notificationFireHelper.fireNotification("third")
-            appContext.appSP.storeLastLocation(currLocation)
-        } else {
-            when {
-                isCloseEnough(homeLocation) -> {
-                    val intent = Intent("POST_PC.ACTION_SEND_SMS")
-                    intent.putExtra("PHONE", appContext.appSP.getPhoneNumber())
-                    intent.putExtra("CONTENT",  "Honey I'm Home!")
-                    LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
-                }
-                else -> {
-                    appContext.appSP.storeLastLocation(currLocation)
-                }
-            }
-        }
+//        if (!hasPermissions() || !hasStoredHomePhoneData()){
+//            Log.d("startJob", "first if")
+//            return Result.success()
+//        }
+//
+//        if (isGpsOff()){
+//            Log.d("startJob", "second if")
+//            return Result.success()
+//        }
+//
+//        startTracking()
+//        lastLocation = appContext.appSP.getLastLocation()
+//
+//        if (lastLocation == null || isCloseEnough(lastLocation)){
+//            Log.d("startJob", "third if")
+//            appContext.notificationFireHelper.fireNotification("third")
+//            appContext.appSP.storeLastLocation(currLocation)
+//        } else {
+//            when {
+//                isCloseEnough(homeLocation) -> {
+//                    val intent = Intent("POST_PC.ACTION_SEND_SMS")
+//                    intent.putExtra("PHONE", appContext.appSP.getPhoneNumber())
+//                    intent.putExtra("CONTENT",  "Honey I'm Home!")
+//                    LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+//                }
+//                else -> {
+//                    appContext.appSP.storeLastLocation(currLocation)
+//                }
+//            }
+//        }
         return Result.success()
     }
 

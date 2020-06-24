@@ -35,6 +35,7 @@ class AppSP(context: Context) {
         if (locAsJason != null) {
             val locationType = object : TypeToken<LocationInfo>(){}.type
             homeLocationInfo = gson.fromJson(locAsJason, locationType)
+            Log.d("homeLocationInSp = ", "${homeLocationInfo?.accuracy}")
         }
     }
 
