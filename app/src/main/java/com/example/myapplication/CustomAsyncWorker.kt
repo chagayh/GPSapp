@@ -36,17 +36,18 @@ class CustomAsyncWorker(private val context: Context, workerParams: WorkerParame
         // 1. here we create the future and store the callback for later use
         val future = CallbackToFutureAdapter.getFuture {callback: CallbackToFutureAdapter.Completer<Result> ->
             this.callback = callback
+
             return@getFuture null
         }
-        
-        appContext.notificationFireHelper.fireNotification("start")
+
+        appContext.notificationFireHelper.fireNotification("start")     // To see if gets here
 
         if (!hasPermissions() || !hasStoredHomePhoneData()){
-            Log.d("CustomAsyncWorker", "first if")
+            Log.d("CustomAsyncWorker", "permission or data prob")
             this.callback?.set(Result.success())
         }
         if (isGpsOff()){
-            Log.d("CustomAsyncWorker", "second if")
+            Log.d("CustomAsyncWorker", "gps off")
             this.callback?.set(Result.success())
         }
 
@@ -100,15 +101,17 @@ class CustomAsyncWorker(private val context: Context, workerParams: WorkerParame
         this.receiver = object : BroadcastReceiver() {
             // notice that the fun onReceive() will get called in the future, not now
             override fun onReceive(context: Context?, intent: Intent?) {
-                // got broadcast! - there is new location
+
+                // got broadcast! - there is a new location
                 lastLocation = appContext.appSP.getLastLocation()
-                currLocation = locationTracker.getLocationInfo()
+                currLocation = locationTracker.getLocationInfo()    // the new location
 
                 if (lastLocation == null || isCloseEnough(lastLocation)){
-                    Log.d("CustomAsyncWorker", "last = null || close enough")
+                    Log.d("CustomAsyncWorker", "last = null || close enough from last loc")
                     appContext.appSP.storeLastLocation(currLocation)
                 } else {
                     if (isCloseEnough(homeLocation))  {
+                        // Send sms broadcast
                             val phoneIntent = Intent("POST_PC.ACTION_SEND_SMS")
                             phoneIntent.putExtra("PHONE", appContext.appSP.getPhoneNumber())
                             phoneIntent.putExtra("CONTENT",  "Honey I'm Home!")
@@ -118,6 +121,7 @@ class CustomAsyncWorker(private val context: Context, workerParams: WorkerParame
                     }
                     appContext.appSP.storeLastLocation(currLocation)
                 }
+
                 onReceivedBroadcast()
             }
         }

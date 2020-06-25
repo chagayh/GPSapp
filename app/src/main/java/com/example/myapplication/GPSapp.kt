@@ -23,9 +23,11 @@ class GPSapp: Application() {
             .build()
 
         val workManager = WorkManager.getInstance(this)
-        workManager.enqueueUniquePeriodicWork("location", ExistingPeriodicWorkPolicy.KEEP, periodicWorkRequestBuilder)
+        workManager.enqueueUniquePeriodicWork("location",
+                                                ExistingPeriodicWorkPolicy.KEEP,
+                                                periodicWorkRequestBuilder)
 
-        val broadcastSendSmsReceiver  = LocalSendSmsBroadcastReceiver(this, notificationFireHelper)
+        val broadcastSendSmsReceiver = LocalSendSmsBroadcastReceiver(this, notificationFireHelper)
 
         LocalBroadcastManager.getInstance(this)
             .registerReceiver(broadcastSendSmsReceiver, IntentFilter("POST_PC.ACTION_SEND_SMS"))

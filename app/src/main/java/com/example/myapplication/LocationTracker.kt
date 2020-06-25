@@ -25,7 +25,6 @@ class LocationTracker(private val context: Context) {
     var isTracking: Boolean = false
     private var locationCallback: LocationCallback
 
-
     private val LOG_TRACK = "trackingLog"
 
     init {

@@ -68,20 +68,17 @@ class MainActivity : AppCompatActivity() {
 
         setButtons()
 
-        loadHomeLocationFromSP()
-        loadPhoneNumberFromSP()
+        loadDataFromSP()
 
         setBroadcast()
     }
 
-    private fun loadPhoneNumberFromSP() {
+    private fun loadDataFromSP() {
         if (appContext.appSP.getPhoneNumber() != null) {
             testSmsBtn.visibility = View.VISIBLE
             deletePhoneNumBtn.visibility = View.VISIBLE
         }
-    }
 
-    private fun loadHomeLocationFromSP() {
         if (appContext.appSP.getHomeLocation() != null) {
             textViewHomeLocation.visibility = View.VISIBLE
             fixSetHomeBtn.visibility = if (locationInfo == null) View.INVISIBLE else View.VISIBLE
@@ -110,6 +107,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setBroadcast() {
+
+        // Update locaion broadcast
         broadcastLocationReceiver = (object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 Log.d("updateLocation", "updated location")
@@ -137,6 +136,7 @@ class MainActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(appContext)
             .registerReceiver(broadcastLocationReceiver, IntentFilter("update_location"))
 
+        // start tracking broadcast
         broadcastStartTrackingReceiver = (object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 Log.d("start_tracking", "start tracking")
@@ -148,6 +148,7 @@ class MainActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(appContext)
             .registerReceiver(broadcastStartTrackingReceiver, IntentFilter("start_tracking"))
 
+        // Gps off broadcast
         broadcastGpsOffReceiver = (object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 Log.d("gps_off", "gps is off")
@@ -159,6 +160,7 @@ class MainActivity : AppCompatActivity() {
         LocalBroadcastManager.getInstance(appContext)
             .registerReceiver(broadcastGpsOffReceiver, IntentFilter("gps_off"))
 
+        // Stopped tracking broadcast
         broadcastStopTrackingReceiver = (object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 Log.d("stop_tracking", "stopped tracking")
