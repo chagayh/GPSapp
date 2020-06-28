@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.location.Location
 import androidx.appcompat.app.AppCompatActivity
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import android.os.Bundle
 import android.provider.Settings
 import android.text.InputType
@@ -19,6 +18,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 
@@ -133,7 +133,8 @@ class MainActivity : AppCompatActivity() {
                 updateCurrLocationView()
             }
         })
-        LocalBroadcastManager.getInstance(appContext)
+//        registerReceiver(broadcastLocationReceiver, IntentFilter("update_location"))
+        LocalBroadcastManager.getInstance(this)
             .registerReceiver(broadcastLocationReceiver, IntentFilter("update_location"))
 
         // start tracking broadcast
@@ -145,8 +146,9 @@ class MainActivity : AppCompatActivity() {
                     .show()
             }
         })
-        LocalBroadcastManager.getInstance(appContext)
-            .registerReceiver(broadcastStartTrackingReceiver, IntentFilter("start_tracking"))
+        registerReceiver(broadcastStartTrackingReceiver, IntentFilter("start_tracking"))
+//        LocalBroadcastManager.getInstance(appContext)
+//            .registerReceiver(broadcastStartTrackingReceiver, IntentFilter("start_tracking"))
 
         // Gps off broadcast
         broadcastGpsOffReceiver = (object : BroadcastReceiver() {
@@ -157,8 +159,9 @@ class MainActivity : AppCompatActivity() {
                     .show()
             }
         })
-        LocalBroadcastManager.getInstance(appContext)
-            .registerReceiver(broadcastGpsOffReceiver, IntentFilter("gps_off"))
+        registerReceiver(broadcastGpsOffReceiver, IntentFilter("gps_off"))
+//        LocalBroadcastManager.getInstance(appContext)
+//            .registerReceiver(broadcastGpsOffReceiver, IntentFilter("gps_off"))
 
         // Stopped tracking broadcast
         broadcastStopTrackingReceiver = (object : BroadcastReceiver() {
@@ -168,8 +171,9 @@ class MainActivity : AppCompatActivity() {
                     .show()
             }
         })
-        LocalBroadcastManager.getInstance(appContext)
-            .registerReceiver(broadcastStopTrackingReceiver, IntentFilter("stop_tracking"))
+        registerReceiver(broadcastStopTrackingReceiver, IntentFilter("stop_tracking"))
+//        LocalBroadcastManager.getInstance(appContext)
+//            .registerReceiver(broadcastStopTrackingReceiver, IntentFilter("stop_tracking"))
     }
 
     @SuppressLint("SetTextI18n")
@@ -244,7 +248,8 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent("POST_PC.ACTION_SEND_SMS")
             intent.putExtra("PHONE", appContext.appSP.getPhoneNumber())
             intent.putExtra("CONTENT",  "Honey I'm Sending a Test Message!")
-            LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
+            this.sendBroadcast(intent)
+//            LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
         }
 
         deletePhoneNumBtn.setOnClickListener {
@@ -378,10 +383,14 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         locationTracker.stopTracking()
-        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastLocationReceiver)
-        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStartTrackingReceiver)
-        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStopTrackingReceiver)
-        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastGpsOffReceiver)
+        unregisterReceiver(broadcastLocationReceiver)
+        unregisterReceiver(broadcastStartTrackingReceiver)
+        unregisterReceiver(broadcastStopTrackingReceiver)
+        unregisterReceiver(broadcastGpsOffReceiver)
+//        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastLocationReceiver)
+//        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStartTrackingReceiver)
+//        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastStopTrackingReceiver)
+//        LocalBroadcastManager.getInstance(appContext).unregisterReceiver(broadcastGpsOffReceiver)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

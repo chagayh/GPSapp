@@ -5,18 +5,11 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Location
 import android.location.LocationManager
 import android.os.Looper
-import android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS
 import android.util.Log
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat.startActivity
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.location.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 class LocationTracker(private val context: Context) {
 
@@ -36,9 +29,10 @@ class LocationTracker(private val context: Context) {
                     locationResult.lastLocation.latitude,
                     locationResult.lastLocation.longitude
                 )
-
                 val intent = Intent("update_location")
-                LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+                context.sendBroadcast(intent)
+                Log.d("locationTracker", "after send update broadcast")
+//                LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
             }
         }
     }
@@ -69,17 +63,18 @@ class LocationTracker(private val context: Context) {
         if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
             == PackageManager.PERMISSION_GRANTED
         ) {
-
             val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager?
             if (locationManager?.isProviderEnabled(LocationManager.GPS_PROVIDER) == false) {
 //                buildAlertMessageNoGps()
                 val intent = Intent("gps_off")
-                LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+                context.sendBroadcast(intent)
+//                LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
             } else {
                 isTracking = true
                 startLocationUpdates()
                 val intent = Intent("start_tracking")
-                LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+                context.sendBroadcast(intent)
+//                LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
             }
         }
     }
@@ -89,7 +84,8 @@ class LocationTracker(private val context: Context) {
         fusedLocationClient.removeLocationUpdates(locationCallback)
         Log.d(LOG_TRACK, "stop tracking")
         val intent = Intent("stop_tracking")
-        LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+        context.sendBroadcast(intent)
+//        LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
     }
 
     fun getLocationInfo(): LocationInfo? {

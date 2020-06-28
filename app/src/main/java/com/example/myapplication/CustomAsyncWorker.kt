@@ -40,19 +40,26 @@ class CustomAsyncWorker(private val context: Context, workerParams: WorkerParame
             return@getFuture null
         }
 
-        appContext.notificationFireHelper.fireNotification("start")     // To see if gets here
+        Log.d("asyncWorker", "start")
 
         if (!hasPermissions() || !hasStoredHomePhoneData()){
-            Log.d("CustomAsyncWorker", "permission or data prob")
-            this.callback?.set(Result.success())
-        }
-        if (isGpsOff()){
-            Log.d("CustomAsyncWorker", "gps off")
+            Log.d("asyncWorker", "permission or data prob")
             this.callback?.set(Result.success())
         }
 
-        placeReceiver()
-        locationTracker.startTracking()
+        else if (isGpsOff()){
+            Log.d("asyncWorker", "gps off")
+            this.callback?.set(Result.success())
+        }
+
+        else {
+            placeReceiver()
+
+            Log.d("asyncWorker", "after place receiver")
+//        appContext.notificationFireHelper.fireNotification("start")     // To see if gets here
+
+            locationTracker.startTracking()
+        }
 
         return future
     }
@@ -101,10 +108,13 @@ class CustomAsyncWorker(private val context: Context, workerParams: WorkerParame
         this.receiver = object : BroadcastReceiver() {
             // notice that the fun onReceive() will get called in the future, not now
             override fun onReceive(context: Context?, intent: Intent?) {
+                Log.d("asyncWorker", "in onReceive")
 
                 // got broadcast! - there is a new location
                 lastLocation = appContext.appSP.getLastLocation()
                 currLocation = locationTracker.getLocationInfo()    // the new location
+
+                Log.d("asyncWorker", "after last and curr location")
 
                 if (lastLocation == null || isCloseEnough(lastLocation)){
                     Log.d("CustomAsyncWorker", "last = null || close enough from last loc")
@@ -115,9 +125,8 @@ class CustomAsyncWorker(private val context: Context, workerParams: WorkerParame
                             val phoneIntent = Intent("POST_PC.ACTION_SEND_SMS")
                             phoneIntent.putExtra("PHONE", appContext.appSP.getPhoneNumber())
                             phoneIntent.putExtra("CONTENT",  "Honey I'm Home!")
-                        if (context != null) {
-                            LocalBroadcastManager.getInstance(context).sendBroadcast(phoneIntent)
-                        }
+                            context?.sendBroadcast(phoneIntent)
+//                            LocalBroadcastManager.getInstance(context).sendBroadcast(phoneIntent)
                     }
                     appContext.appSP.storeLastLocation(currLocation)
                 }

@@ -47,14 +47,14 @@ class AppSP(context: Context) {
     fun storePhoneNumber(phoneNum: String){
         this.phoneNumber = phoneNum
         val edit: SharedPreferences.Editor = spForGPSapp.edit()
-        edit.putString(KEY_PHONE_NUMBER, this.phoneNumber).
-        apply()
+        edit.putString(KEY_PHONE_NUMBER, this.phoneNumber)
+            .apply()
     }
 
     fun deletePhoneNumber() {
         val edit: SharedPreferences.Editor = spForGPSapp.edit()
-        edit.remove(KEY_PHONE_NUMBER).
-        apply()
+        edit.remove(KEY_PHONE_NUMBER)
+            .apply()
         phoneNumber = null
     }
 
@@ -74,16 +74,16 @@ class AppSP(context: Context) {
         this.homeLocationInfo = homeLocationInfo
         val locationAsJso = gson.toJson(homeLocationInfo)
         val edit: SharedPreferences.Editor = spForGPSapp.edit()
-        edit.putString(GSON_KEY_HOME_LOCATION, locationAsJso).
-                apply()
+        edit.putString(GSON_KEY_HOME_LOCATION, locationAsJso)
+            .apply()
     }
 
     fun storeLastLocation(location: LocationInfo?){
         this.lastLocationInfo = location
         val locationAsJso = gson.toJson(location)
         val edit: SharedPreferences.Editor = spForGPSapp.edit()
-        edit.putString(GSON_KEY_LAST_LOCATION, locationAsJso).
-        apply()
+        edit.putString(GSON_KEY_LAST_LOCATION, locationAsJso)
+            .apply()
     }
 
     private fun loadLastLocation(){
@@ -97,8 +97,8 @@ class AppSP(context: Context) {
     fun deleteHomeLocation() {
         Log.d(NULL_TAG, "home loc = $homeLocationInfo")
         val edit: SharedPreferences.Editor = spForGPSapp.edit()
-        edit.remove(GSON_KEY_HOME_LOCATION).
-                apply()
+        edit.remove(GSON_KEY_HOME_LOCATION)
+            .apply()
         homeLocationInfo = null
     }
 }
